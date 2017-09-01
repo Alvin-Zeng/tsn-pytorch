@@ -108,9 +108,11 @@ TSN Configurations:
             import tf_model_zoo
             self.base_model = getattr(tf_model_zoo, base_model)()
             self.base_model.last_layer_name = 'classif'
+            print self.base_model
             self.input_size = 299
             self.input_mean = [0.5]
             self.input_std = [0.5]
+            	
         else:
             raise ValueError('Unknown base model: {}'.format(base_model))
 
