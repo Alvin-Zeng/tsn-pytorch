@@ -72,7 +72,7 @@ data_loader = torch.utils.data.DataLoader(
         TSNDataSet("", args.test_list, num_segments=args.test_segments,
                    new_length=1 if args.modality == "RGB" else 5,
                    modality=args.modality,
-                   image_tmpl="img_{:05d}.jpg" if args.modality in ['RGB', 'RGBDiff'] else args.flow_prefix+"{}_{:05d}.jpg",
+                   image_tmpl="img_{:05d}.jpg" if args.modality in ['RGB', 'RGBDiff'] else 'flow_'+args.flow_prefix+"{}_{:05d}.jpg",
                    test_mode=True,
                    transform=torchvision.transforms.Compose([
                        cropping,

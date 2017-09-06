@@ -14,6 +14,8 @@ from models import TSN
 from transforms import *
 from opts import parser
 
+from logger import Logger
+
 best_prec1 = 0
 
 
@@ -68,6 +70,7 @@ def main():
     elif args.modality in ['Flow', 'RGBDiff']:
         data_length = 5
 
+    print 'Strat to laod data'
     train_loader = torch.utils.data.DataLoader(
         TSNDataSet("", args.train_list, num_segments=args.num_segments,
                    new_length=data_length,
@@ -81,7 +84,7 @@ def main():
                    ])),
         batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True)
-
+    print 'Load train_data Finished'
     val_loader = torch.utils.data.DataLoader(
         TSNDataSet("", args.val_list, num_segments=args.num_segments,
                    new_length=data_length,
@@ -97,7 +100,7 @@ def main():
                    ])),
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
-
+    print 'Load val_data Finished'
     # define loss function (criterion) and optimizer
     if args.loss_type == 'nll':
         criterion = torch.nn.CrossEntropyLoss().cuda()
@@ -117,11 +120,18 @@ def main():
         validate(val_loader, model, criterion, 0)
         return
 
+    #logger = logger('./logs')
+    log_file = file('./'+args.arch+args.modality+'log_file.txt','a')
+    log_file.close()
+
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch, args.lr_steps)
 
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch)
+        log_file = open('./'+args.arch+args.modality+'log_file.txt','a')
+        log_data = train(train_loader, model, criterion, optimizer, epoch)
+        log_file.write(log_data)
+        log_file.close()
 
         # evaluate on validation set
         if (epoch + 1) % args.eval_freq == 0 or epoch == args.epochs - 1:
@@ -136,6 +146,8 @@ def main():
                 'state_dict': model.state_dict(),
                 'best_prec1': best_prec1,
             }, is_best)
+
+    
 
 
 def train(train_loader, model, criterion, optimizer, epoch):
@@ -199,6 +211,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, loss=losses, top1=top1, top5=top5, lr=optimizer.param_groups[-1]['lr'])))
 
+        if i == len(train_loader)-1:
+        	log_data = "%d  %.4f  %.4f  %.3f  %.3f  %.3f  %.3f\n" % (epoch, losses.val, losses.avg, top1.val, top1.avg, top5.val, top5.avg)
+    return log_data
 
 def validate(val_loader, model, criterion, iter, logger=None):
     batch_time = AverageMeter()

@@ -4,6 +4,8 @@ from ops.basic_ops import ConsensusModule, Identity
 from transforms import *
 from torch.nn.init import normal, constant
 
+import inceptionresnetv2
+
 class TSN(nn.Module):
     def __init__(self, num_class, num_segments, modality,
                  base_model='resnet101', new_length=None,
@@ -112,7 +114,20 @@ TSN Configurations:
             self.input_size = 299
             self.input_mean = [0.5]
             self.input_std = [0.5]
-            	
+        
+        elif base_model == 'incep_res_netv2':
+            self.base_model = inceptionresnetv2.inceptionresnetv2(num_classes=1000, pretrained='imagenet')
+            self.base_model.last_layer_name = 'classif'
+            self.input_size = 299
+            self.input_mean = [0.485, 0.456, 0.406]
+            self.input_std = [0.229, 0.224, 0.225]
+            print "Loading inception_resnetv2..."
+            if self.modality == 'Flow':
+                self.input_mean = [0.5]
+                self.input_std = [np.mean(self.input_std)]
+            elif self.modality == 'RGBDiff':
+                self.input_mean = [0.485, 0.456, 0.406] + [0] * 3 * self.new_length
+                self.input_std = self.input_std + [np.mean(self.input_std) * 2] * 3 * self.new_length    	
         else:
             raise ValueError('Unknown base model: {}'.format(base_model))
 
